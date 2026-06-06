@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EnglishBoard — Pronunciation Sound Board</title>
+  <meta name="description" content="A classroom sound board for English pronunciation. Type a word or sentence, hear it spoken in English. For elementary teachers." />
+  <style>
+    :root {
+      --canvas: #f5f5f5;
+      --canvas-soft: #fafafa;
+      --canvas-deep: #0c0a09;
+      --surface-card: #ffffff;
+      --surface-strong: #f0efed;
+      --ink: #0c0a09;
+      --primary: #292524;
+      --primary-active: #0c0a09;
+      --on-primary: #ffffff;
+      --body: #4e4e4e;
+      --muted: #777169;
+      --hairline: #e7e5e4;
+      --hairline-strong: #d6d3d1;
+      --gradient-mint: #a7e5d3;
+      --gradient-peach: #f4c5a8;
+      --gradient-lavender: #c8b8e0;
+      --gradient-sky: #a8c8e8;
+      --gradient-rose: #e8b8c4;
+      --semantic-error: #dc2626;
+
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+      --space-xxs: 4px;
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-base: 16px;
+      --space-md: 20px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-xxl: 48px;
+      --space-section: 96px;
+
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-xxl: 24px;
+      --radius-pill: 9999px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.5;
+      letter-spacing: 0.16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    a:hover { color: var(--primary-active); }
+
+    button, input { font-family: inherit; font-size: inherit; color: inherit; }
+
+    :focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+      border-radius: var(--radius-md);
+    }
+
+    /* Top nav */
+    .top-nav {
+      height: 64px;
+      background: var(--canvas);
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-xl);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: 22px;
+      letter-spacing: -0.2px;
+      color: var(--ink);
+    }
+    .wordmark .dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--gradient-mint), var(--gradient-peach));
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 14px;
+      color: var(--body);
+    }
+    .speed-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.96px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .speed-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 160px;
+      height: 4px;
+      background: var(--hairline-strong);
+      border-radius: var(--radius-pill);
+      outline: none;
+    }
+    .speed-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px; height: 18px;
+      background: var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    .speed-slider::-moz-range-thumb {
+      width: 18px; height: 18px;
+      background: var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    .speed-value {
+      min-width: 38px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      padding: var(--space-section) var(--space-xl);
+      background: var(--canvas-soft);
+      overflow: hidden;
+    }
+    .hero-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(32px, 6vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin: 0 0 var(--space-base) 0;
+      color: var(--ink);
+    }
+    .hero p {
+      font-size: 17px;
+      line-height: 1.5;
+      letter-spacing: 0.16px;
+      color: var(--body);
+      max-width: 560px;
+      margin: 0 0 var(--space-xl) 0;
+    }
+    .hero-orb {
+      position: absolute;
+      width: 520px; height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, var(--gradient-mint) 0%, var(--gradient-peach) 45%, transparent 70%);
+      filter: blur(60px);
+      opacity: 0.55;
+      top: -120px;
+      right: -120px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Input row */
+    .input-row {
+      display: flex;
+      gap: var(--space-sm);
+      max-width: 720px;
+    }
+    .text-input {
+      flex: 1;
+      height: 52px;
+      background: var(--surface-card);
+      color: var(--ink);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius-md);
+      padding: 0 var(--space-base);
+      font-size: 16px;
+      letter-spacing: 0.16px;
+      transition: border-color 200ms, box-shadow 200ms;
+    }
+    .text-input::placeholder { color: var(--muted); }
+    .text-input:focus {
+      border-color: var(--ink);
+      border-width: 2px;
+      outline: none;
+      padding: 0 calc(var(--space-base) - 1px);
+    }
+
+    .btn-primary {
+      height: 52px;
+      padding: 0 var(--space-lg);
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-pill);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      transition: background-color 200ms;
+    }
+    .btn-primary:hover { background: #404040; }
+    .btn-primary:active { background: var(--primary-active); }
+    .btn-primary:disabled {
+      background: var(--hairline-strong);
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+    .btn-primary svg { width: 14px; height: 14px; }
+
+    .btn-outline {
+      height: 40px;
+      padding: 0 var(--space-md);
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--hairline-strong);
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 200ms, border-color 200ms;
+    }
+    .btn-outline:hover {
+      background: var(--surface-strong);
+      border-color: var(--ink);
+    }
+
+    /* Tabs */
+    .tabs-band {
+      padding: var(--space-lg) var(--space-xl);
+      background: var(--canvas);
+      border-bottom: 1px solid var(--hairline);
+      position: sticky;
+      top: 64px;
+      z-index: 9;
+    }
+    .tabs {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .tab {
+      background: var(--surface-strong);
+      color: var(--ink);
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.96px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background-color 200ms, color 200ms;
+    }
+    .tab:hover { background: var(--hairline-strong); }
+    .tab.active {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+    .tab-count {
+      margin-left: 6px;
+      opacity: 0.7;
+      font-weight: 500;
+    }
+
+    /* Card grid */
+    .board {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-xxl) var(--space-xl);
+    }
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xxl) var(--space-xl);
+      color: var(--body);
+    }
+    .empty-state h2 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: 28px;
+      color: var(--ink);
+      margin: 0 0 var(--space-sm) 0;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-base);
+    }
+    @media (max-width: 1024px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px)  { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px)  { .card-grid { grid-template-columns: 1fr; } }
+
+    .card {
+      position: relative;
+      background: var(--surface-card);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-xl);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      min-height: 160px;
+      transition: box-shadow 200ms, border-color 200ms, transform 200ms;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border-color: var(--hairline-strong);
+    }
+    .card:focus-within {
+      border-color: var(--ink);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .card-text {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--ink);
+      flex: 1;
+      word-break: break-word;
+      letter-spacing: 0;
+    }
+    .card-cat {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.96px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .card-play {
+      height: 40px;
+      padding: 0 var(--space-base);
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 200ms;
+    }
+    .card-play:hover { background: #404040; }
+    .card-play svg { width: 12px; height: 12px; }
+
+    .card-fav {
+      width: 40px; height: 40px;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 200ms, color 200ms;
+    }
+    .card-fav:hover { background: var(--surface-strong); color: var(--ink); }
+    .card-fav.is-fav { color: var(--ink); }
+    .card-fav svg { width: 22px; height: 22px; }
+
+    .card-orb {
+      position: absolute;
+      inset: -40px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 200ms;
+      z-index: 0;
+    }
+    .card.is-playing .card-orb {
+      opacity: 1;
+      background: radial-gradient(circle at 50% 50%, var(--gradient-mint) 0%, var(--gradient-peach) 40%, transparent 70%);
+      animation: orbPulse 1400ms ease-in-out infinite;
+    }
+    .card.is-playing { border-color: var(--ink); }
+    .card > * { position: relative; z-index: 1; }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.45; }
+      50%      { transform: scale(1.05); opacity: 0.75; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card.is-playing .card-orb { animation: none; opacity: 0.5; }
+    }
+
+    /* CTA band (print) */
+    .cta-band {
+      background: var(--canvas);
+      padding: var(--space-section) var(--space-xl);
+      text-align: center;
+      border-top: 1px solid var(--hairline);
+    }
+    .cta-band h2 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(24px, 4vw, 36px);
+      line-height: 1.17;
+      letter-spacing: -0.36px;
+      margin: 0 0 var(--space-md) 0;
+      color: var(--ink);
+    }
+    .cta-band p {
+      color: var(--body);
+      margin: 0 0 var(--space-lg) 0;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--canvas);
+      color: var(--body);
+      padding: var(--space-xxl) var(--space-xl);
+      text-align: center;
+      font-size: 14px;
+      border-top: 1px solid var(--hairline);
+    }
+    footer .legal { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* Status / errors */
+    .status {
+      position: fixed;
+      bottom: var(--space-base);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--on-primary);
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms;
+      z-index: 50;
+      max-width: 80vw;
+    }
+    .status.is-on { opacity: 1; }
+    .status.is-error { background: var(--semantic-error); }
+
+    /* Print */
+    @media print {
+      body { background: #ffffff; }
+      .top-nav, .hero, .tabs-band, .cta-band, footer, .status, .card-actions, .card-orb { display: none !important; }
+      .board { padding: 0; max-width: none; }
+      .card-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8mm 6mm;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #888;
+        border-radius: 6px;
+        padding: 10mm 6mm;
+        min-height: 38mm;
+        page-break-inside: avoid;
+        box-shadow: none;
+      }
+      .card-text {
+        font-size: 18pt;
+        text-align: center;
+        margin: auto 0;
+      }
+      .card-cat {
+        text-align: center;
+        font-size: 8pt;
+        color: #555;
+      }
+      @page { size: A4; margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-nav" role="banner">
+    <div class="wordmark"><span class="dot" aria-hidden="true"></span>EnglishBoard</div>
+    <div class="speed-group">
+      <label for="speed" class="speed-label">Speed</label>
+      <input id="speed" class="speed-slider" type="range" min="0.5" max="1.5" step="0.05" value="1.0"
+             aria-label="Playback speed, 0.5 to 1.5 times" />
+      <span class="speed-value" id="speed-value">1.00x</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-orb" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <h1 id="hero-title">Listen, repeat, learn.</h1>
+        <p>Type a word or sentence and press play. Native English voice, classroom speed, printable word cards.</p>
+        <form class="input-row" id="speak-form" autocomplete="off">
+          <label class="sr-only" for="word-input">Word or sentence to pronounce</label>
+          <input id="word-input" class="text-input" type="text"
+                 placeholder="Type a word or sentence in English…"
+                 maxlength="200" aria-describedby="hero-title" />
+          <button type="submit" class="btn-primary" id="speak-btn" aria-label="Play the typed word or sentence">
+            <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M1 1 L11 6 L1 11 Z"/></svg>
+            Speak
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <nav class="tabs-band" aria-label="Categories">
+      <div class="tabs" id="tabs" role="tablist"></div>
+    </nav>
+
+    <section class="board" aria-live="polite" aria-label="Word cards">
+      <div id="empty-state" class="empty-state" hidden>
+        <h2>No cards yet</h2>
+        <p>Star a card from any category, or type a new word above.</p>
+      </div>
+      <div class="card-grid" id="card-grid"></div>
+    </section>
+
+    <section class="cta-band">
+      <h2>Print favorites as word cards</h2>
+      <p>16 cards per A4 page. Only your starred cards are printed.</p>
+      <button class="btn-primary" id="print-btn" aria-label="Print favorites as word cards">Print favorites</button>
+    </section>
+  </main>
+
+  <footer>
+    <div>Day 25 of the 1-day-1-vibe-coding challenge.</div>
+    <div class="legal">No accounts, no servers, no AI. Favorites stored locally on this device.</div>
+  </footer>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <style>
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+
+  <script>
+    /* =========================================================
+       EnglishBoard — single-file vanilla JS.
+       No frameworks, no CDN, no API keys.
+       Uses Web Speech API (speechSynthesis) only.
+       ========================================================= */
+
+    const SEED = {
+      greeting: ["Hello", "Good morning", "Good afternoon", "Goodbye", "How are you?", "Nice to meet you"],
+      classroom: ["Open your book", "Sit down please", "Raise your hand", "Repeat after me", "Well done", "Listen carefully"],
+      animals: ["dog", "cat", "bird", "elephant", "rabbit", "monkey", "lion", "tiger"],
+      food: ["apple", "banana", "bread", "rice", "water", "milk", "juice", "cookie"],
+      colors: ["red", "blue", "yellow", "green", "orange", "purple", "black", "white"],
+      phrases: ["Thank you", "You're welcome", "Excuse me", "I'm sorry", "See you tomorrow", "Have a nice day"]
+    };
+
+    const CAT_ORDER = [
+      { id: "favorites", label: "Favorites" },
+      { id: "greeting",  label: "Greeting"  },
+      { id: "classroom", label: "Classroom" },
+      { id: "animals",   label: "Animals"   },
+      { id: "food",      label: "Food"      },
+      { id: "colors",    label: "Colors"    },
+      { id: "phrases",   label: "Phrases"   },
+      { id: "recent",    label: "Recent"    }
+    ];
+
+    const LS_FAV = "englishboard.favs.v1";
+    const LS_RECENT = "englishboard.recent.v1";
+    const RECENT_MAX = 24;
+
+    const state = {
+      activeTab: "greeting",
+      favorites: loadJson(LS_FAV, []),
+      recent: loadJson(LS_RECENT, []),
+      voices: [],
+      preferredVoice: null,
+      rate: 1.0,
+      playingKey: null,
+    };
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const v = JSON.parse(raw);
+        return Array.isArray(v) ? v : fallback;
+      } catch { return fallback; }
+    }
+    function saveJson(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    }
+
+    function cardKey(category, text) {
+      return category + "::" + text.toLowerCase();
+    }
+    function isFavorite(category, text) {
+      return state.favorites.some(f => f.category === category && f.text === text);
+    }
+    function toggleFavorite(category, text) {
+      const idx = state.favorites.findIndex(f => f.category === category && f.text === text);
+      if (idx >= 0) state.favorites.splice(idx, 1);
+      else state.favorites.unshift({ category, text });
+      saveJson(LS_FAV, state.favorites);
+    }
+    function pushRecent(text) {
+      const t = text.trim();
+      if (!t) return;
+      state.recent = [t, ...state.recent.filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, RECENT_MAX);
+      saveJson(LS_RECENT, state.recent);
+    }
+
+    /* ---- Voices ---- */
+    function loadVoices() {
+      if (!("speechSynthesis" in window)) return;
+      const all = window.speechSynthesis.getVoices() || [];
+      const english = all.filter(v => /^en(-|_|$)/i.test(v.lang || ""));
+      english.sort((a, b) => {
+        const score = v => {
+          let s = 0;
+          const lang = (v.lang || "").toLowerCase();
+          if (lang.startsWith("en-us")) s += 4;
+          else if (lang.startsWith("en-gb")) s += 3;
+          else if (lang.startsWith("en-au")) s += 2;
+          else if (lang.startsWith("en")) s += 1;
+          if (v.default) s += 1;
+          if (/google|natural|neural|premium/i.test(v.name)) s += 1;
+          return -s;
+        };
+        return score(a) - score(b);
+      });
+      state.voices = english;
+      state.preferredVoice = english[0] || null;
+    }
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      if (typeof window.speechSynthesis.onvoiceschanged !== "undefined") {
+        window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+      }
+    }
+
+    /* ---- Speak ---- */
+    function speak(text, category, cardEl) {
+      const t = (text || "").trim();
+      if (!t) return;
+      if (!("speechSynthesis" in window)) {
+        showStatus("Sorry, your browser does not support speech synthesis.", true);
+        return;
+      }
+      try { window.speechSynthesis.cancel(); } catch {}
+      const u = new SpeechSynthesisUtterance(t);
+      if (state.preferredVoice) {
+        u.voice = state.preferredVoice;
+        u.lang = state.preferredVoice.lang;
+      } else {
+        u.lang = "en-US";
+      }
+      u.rate = state.rate;
+      u.pitch = 1.0;
+      u.volume = 1.0;
+
+      const key = category ? cardKey(category, t) : "__hero__";
+      state.playingKey = key;
+      if (cardEl) cardEl.classList.add("is-playing");
+      const cleanup = () => {
+        if (state.playingKey === key) state.playingKey = null;
+        if (cardEl) cardEl.classList.remove("is-playing");
+      };
+      u.onend = cleanup;
+      u.onerror = (e) => {
+        cleanup();
+        // On some browsers Web Speech triggers "interrupted" when cancelled — that's normal.
+        if (e && e.error && e.error !== "interrupted" && e.error !== "canceled") {
+          showStatus("Speech failed: " + e.error, true);
+        }
+      };
+      try {
+        window.speechSynthesis.speak(u);
+      } catch (err) {
+        cleanup();
+        showStatus("Speech failed: " + (err && err.message ? err.message : "unknown"), true);
+      }
+    }
+
+    /* ---- Status toast ---- */
+    let statusTimer = null;
+    function showStatus(msg, isError) {
+      const el = document.getElementById("status");
+      el.textContent = msg;
+      el.classList.toggle("is-error", !!isError);
+      el.classList.add("is-on");
+      clearTimeout(statusTimer);
+      statusTimer = setTimeout(() => el.classList.remove("is-on"), 2400);
+    }
+
+    /* ---- Rendering ---- */
+    function listForTab(tabId) {
+      if (tabId === "favorites") {
+        return state.favorites.map(f => ({ category: f.category, text: f.text }));
+      }
+      if (tabId === "recent") {
+        return state.recent.map(t => ({ category: "recent", text: t }));
+      }
+      const words = SEED[tabId] || [];
+      return words.map(text => ({ category: tabId, text }));
+    }
+    function favoriteCount() { return state.favorites.length; }
+
+    function renderTabs() {
+      const tabsEl = document.getElementById("tabs");
+      tabsEl.innerHTML = "";
+      CAT_ORDER.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = "tab" + (state.activeTab === cat.id ? " active" : "");
+        btn.type = "button";
+        btn.setAttribute("role", "tab");
+        btn.setAttribute("aria-selected", state.activeTab === cat.id ? "true" : "false");
+        btn.dataset.tab = cat.id;
+        const count = cat.id === "favorites" ? favoriteCount()
+                    : cat.id === "recent" ? state.recent.length
+                    : (SEED[cat.id] || []).length;
+        btn.innerHTML = cat.label + ' <span class="tab-count">' + count + '</span>';
+        btn.addEventListener("click", () => {
+          state.activeTab = cat.id;
+          renderTabs();
+          renderCards();
+        });
+        tabsEl.appendChild(btn);
+      });
+    }
+
+    function renderCards() {
+      const grid = document.getElementById("card-grid");
+      const emptyEl = document.getElementById("empty-state");
+      const items = listForTab(state.activeTab);
+      grid.innerHTML = "";
+      if (!items.length) {
+        emptyEl.hidden = false;
+        emptyEl.querySelector("h2").textContent =
+          state.activeTab === "favorites" ? "No favorites yet" :
+          state.activeTab === "recent"    ? "No recent words yet" : "No cards yet";
+        emptyEl.querySelector("p").textContent =
+          state.activeTab === "favorites" ? "Tap the star on any card to add it here."
+          : state.activeTab === "recent"  ? "Type a word above to start a list."
+          : "Type a word above to start a list.";
+        return;
+      }
+      emptyEl.hidden = true;
+
+      items.forEach(item => {
+        const fav = isFavorite(item.category, item.text);
+        const card = document.createElement("article");
+        card.className = "card";
+        card.dataset.category = item.category;
+        card.dataset.text = item.text;
+        card.tabIndex = 0;
+
+        const orb = document.createElement("div");
+        orb.className = "card-orb";
+        orb.setAttribute("aria-hidden", "true");
+        card.appendChild(orb);
+
+        const cat = document.createElement("div");
+        cat.className = "card-cat";
+        cat.textContent = (CAT_ORDER.find(c => c.id === item.category) || { label: item.category }).label;
+        card.appendChild(cat);
+
+        const text = document.createElement("div");
+        text.className = "card-text";
+        text.textContent = item.text;
+        card.appendChild(text);
+
+        const actions = document.createElement("div");
+        actions.className = "card-actions";
+
+        const playBtn = document.createElement("button");
+        playBtn.className = "card-play";
+        playBtn.type = "button";
+        playBtn.setAttribute("aria-label", 'Play "' + item.text + '"');
+        playBtn.innerHTML = '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M1 1 L11 6 L1 11 Z"/></svg> Play';
+        playBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          speak(item.text, item.category, card);
+        });
+        actions.appendChild(playBtn);
+
+        const favBtn = document.createElement("button");
+        favBtn.className = "card-fav" + (fav ? " is-fav" : "");
+        favBtn.type = "button";
+        favBtn.setAttribute("aria-label",
+          (fav ? "Remove from favorites: " : "Add to favorites: ") + '"' + item.text + '"');
+        favBtn.setAttribute("aria-pressed", fav ? "true" : "false");
+        favBtn.innerHTML = fav
+          ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.3 5.8 21l1.6-7.1L2 9.2l7.2-.6L12 2l2.8 6.6 7.2.6-5.4 4.7 1.6 7.1Z"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 17.3 5.8 21l1.6-7.1L2 9.2l7.2-.6L12 2l2.8 6.6 7.2.6-5.4 4.7 1.6 7.1Z"/></svg>';
+        favBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleFavorite(item.category, item.text);
+          renderTabs();
+          renderCards();
+        });
+        actions.appendChild(favBtn);
+
+        card.appendChild(actions);
+
+        // Click card body (or Space when focused) → play.
+        card.addEventListener("click", (e) => {
+          if (e.target.closest("button")) return;
+          speak(item.text, item.category, card);
+        });
+        card.addEventListener("keydown", (e) => {
+          if (e.target !== card) return;
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault();
+            speak(item.text, item.category, card);
+          } else if (e.key.toLowerCase() === "f") {
+            e.preventDefault();
+            toggleFavorite(item.category, item.text);
+            renderTabs();
+            renderCards();
+          }
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    /* ---- Wire up ---- */
+    function init() {
+      renderTabs();
+      renderCards();
+
+      const speedEl = document.getElementById("speed");
+      const speedValueEl = document.getElementById("speed-value");
+      const updateSpeed = () => {
+        state.rate = parseFloat(speedEl.value) || 1.0;
+        speedValueEl.textContent = state.rate.toFixed(2) + "x";
+      };
+      speedEl.addEventListener("input", updateSpeed);
+      updateSpeed();
+
+      document.getElementById("speak-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("word-input");
+        const t = input.value.trim();
+        if (!t) return;
+        pushRecent(t);
+        renderTabs();
+        if (state.activeTab === "recent") renderCards();
+        speak(t, "recent", null);
+        showStatus('Speaking: "' + t + '"');
+      });
+
+      document.getElementById("print-btn").addEventListener("click", () => {
+        if (!state.favorites.length) {
+          showStatus("Star at least one card to print.", true);
+          return;
+        }
+        const prev = state.activeTab;
+        state.activeTab = "favorites";
+        renderTabs();
+        renderCards();
+        setTimeout(() => {
+          window.print();
+          state.activeTab = prev;
+          renderTabs();
+          renderCards();
+        }, 100);
+      });
+
+      // Cancel playback on hide.
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && "speechSynthesis" in window) {
+          try { window.speechSynthesis.cancel(); } catch {}
+        }
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
